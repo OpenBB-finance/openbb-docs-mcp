@@ -1,0 +1,6 @@
+fastmcp>=2.0.0
+httpx>=0.25.0
+fastapi>=0.100.0
+uvicorn>=0.30.0
+asyncio>=3.4.3
+typing-extensions>=4.0.0
