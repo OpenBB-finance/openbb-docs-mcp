@@ -114,6 +114,7 @@ async def identify_openbb_docs_sections(user_query: str) -> Dict[str, Any]:
 @mcp.tool()
 async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Dict[str, Any]:
     """
+
     Fetch specific documentation content from OpenBB docs based on section titles.
 
     You MUST call 'identify_openbb_docs_sections' first to obtain the exact section titles
@@ -138,6 +139,7 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
        - If no sections are relevant (low similarity or no direct keyword overlap), respond:
          "No relevant documentation found for this topic. Please contact support@openbb.co for further assistance."
          (This is the only case where support should be mentioned.)
+       - Provide answers to what is asked only (e.g. if users ask for Installation guideline, please don't provide detailed related to its features)
     
     2. Prioritize by Section Name:
        - Strongly weight sections whose titles closely or exactly match the query 
@@ -145,11 +147,15 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
        - Prefer precision over coverage — only merge multiple sections if they directly 
          address the same concept or function
     
-    3. Concise and structured output:
+    3. Detailed instructions and structured output:
        - Begin with a clear, actionable explanation or steps
-       - Follow with bullet points, examples, or code blocks if helpful
+       - Provide detailed and elaborated instructions, not just 2-3 sentences
        - Avoid unnecessary preambles or repetition of the user query
        - Keep tone factual, clean, and instructional
+       - When users ask questions starting with “How to…” or “Show me…”, you must provide step-by-step instructions — not just refer them to a documentation URL.
+       - Your responses should be comprehensive and actionable, allowing users to complete the task solely by following your answer, without needing to open external links.
+       - When appropriate, include examples, code snippets, or command samples to illustrate your explanation.
+       - Avoid giving only brief bullet points. Instead, write clear, sequential steps that are easy to follow, with enough context and explanation for users to understand why each step is necessary.
     
     4. Citations and URLs:
        - If documentation is clearly relevant and you're referencing it, include the 
