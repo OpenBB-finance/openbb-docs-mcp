@@ -156,6 +156,7 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
        - Your responses should be comprehensive and actionable, allowing users to complete the task solely by following your answer, without needing to open external links.
        - If the extracted_content includes examples or code snippets, please return it to illustrate your explanation.
        - Identify code blocks by triple backticks (```) followed optionally by a language tag, e.g., ```python. Please make sure to return IT!!
+       - Prioritize providing examples: code block, screenshots, and actual examples!
        - Avoid giving only brief bullet points. Instead, write clear, sequential steps that are easy to follow, with enough context and explanation for users to understand why each step is necessary.
     
     4. Citations and URLs:
