@@ -135,7 +135,7 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
     RESPONSE GUIDELINES FOR THE LLM:
     
     1. Answer only if relevant:
-       - Use only facts from extracted_content
+       - Use only information from extracted_content, DO NOT used data where you were previously trained on.
        - If no sections are relevant (low similarity or no direct keyword overlap), respond:
          "No relevant documentation found for this topic. Please contact support@openbb.co for further assistance."
          (This is the only case where support should be mentioned.)
@@ -154,7 +154,8 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
        - Keep tone factual, clean, and instructional
        - When users ask questions starting with “How to…” or “Show me…”, you must provide step-by-step instructions — not just refer them to a documentation URL.
        - Your responses should be comprehensive and actionable, allowing users to complete the task solely by following your answer, without needing to open external links.
-       - When appropriate, include examples, code snippets, or command samples to illustrate your explanation.
+       - If the extracted_content includes examples or code snippets, please return it to illustrate your explanation.
+       - Identify code blocks by triple backticks (```) followed optionally by a language tag, e.g., ```python. Please make sure to return IT!!
        - Avoid giving only brief bullet points. Instead, write clear, sequential steps that are easy to follow, with enough context and explanation for users to understand why each step is necessary.
     
     4. Citations and URLs:
@@ -355,45 +356,59 @@ def _extract_sections_from_docs(full_docs: str, section_titles: List[str]) -> Di
 
 
 def _find_section_content(full_docs: str, title: str) -> Optional[str]:
-    """Find content for a specific section title in the full docs."""
+    """Find content for a specific section title in the full docs.
+
+    Sections are in YAML frontmatter format:
+    ---
+    title: Section Name
+    sidebar_position: 1
+    ---
+    content here
+    ---
+
+    ---
+    title: Next Section
+    ---
+    """
     lines = full_docs.split('\n')
 
-    # Try to find the section by matching title patterns
-    patterns_to_try = [
-        f"# {title}",           # Direct header match
-        f"## {title}",          # Subheader match
-        f"### {title}",         # Sub-subheader match
-        title,                  # Direct title match
-        title.lower(),          # Lowercase match
-        title.replace(' ', '-').lower()  # Slug format
-    ]
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
 
-    for pattern in patterns_to_try:
-        for i, line in enumerate(lines):
-            if pattern in line.lower() or line.lower().strip() == pattern:
-                # Found the section start, now extract content
-                content_lines = [line]  # Include the header
+        # Look for "title: <title>" pattern
+        if line.lower().startswith('title:'):
+            # Extract the title from this line
+            section_title = line[6:].strip()  # Remove "title:" prefix
 
-                # Extract content until next section or end
+            # Check if this matches our search title (case-insensitive)
+            if section_title.lower() == title.lower():
+                # Found it! Skip the frontmatter first
                 j = i + 1
-                while j < len(lines):
-                    current_line = lines[j].strip()
 
-                    # Stop if we hit another major section header
-                    if (current_line.startswith('# ') or
-                        current_line.startswith('## ') and
-                        current_line != line.strip()):
+                # Skip until we find the closing --- of frontmatter
+                while j < len(lines) and lines[j].strip() != '---':
+                    j += 1
+
+                # Now j is at the closing ---, move past it
+                j += 1
+
+                # Collect content until we hit the next section (--- followed by blank line and ---)
+                content_lines = []
+                while j < len(lines):
+                    # Check if we're at the start of next section
+                    # Pattern is: ---\n\n--- or ---\n---
+                    if (lines[j].strip() == '---' and
+                        j + 1 < len(lines) and
+                        (lines[j + 1].strip() == '---' or lines[j + 1].strip() == '')):
                         break
 
                     content_lines.append(lines[j])
                     j += 1
 
-                    # Limit content length to prevent overwhelming responses
-                    if len(content_lines) > 100:
-                        content_lines.append("... (content truncated)")
-                        break
-
                 return '\n'.join(content_lines)
+
+        i += 1
 
     return None
 
@@ -404,7 +419,7 @@ if __name__ == "__main__":
 
     print("=" * 80)
     print("Starting FastMCP OpenBB Docs server...")
-    print(f"MCP server will be available at: http://localhost:{port}/mcp")
+    print(f"MCP server will be available at: http://0.0.0.0:{port}/mcp")
     print("Tools available: identify_openbb_docs_sections, fetch_openbb_content")
     print("=" * 80)
 
@@ -412,7 +427,7 @@ if __name__ == "__main__":
     # Set log_level to "error" to only show errors
     uvicorn.run(
         app,
-        host="localhost",  # Listen on all interfaces for containerized deployment
+        host="0.0.0.0",  # Listen on all interfaces for containerized deployment
         port=port,
         log_level="error"
     )
