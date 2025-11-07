@@ -41,7 +41,8 @@ app = mcp.http_app()
 origins = [
     "https://pro.openbb.co",
     "https://pro.openbb.dev",
-    "http://localhost:1420"
+    "http://localhost:1420",
+    "http://localhost:8000"
 ]
 
 # Add CORS middleware with proper header exposure for MCP session management
@@ -49,7 +50,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,  # Configure this more restrictively in production
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
     expose_headers=["mcp-session-id", "mcp-protocol-version"],  # Allow client to read session ID
     max_age=86400,
