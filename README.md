@@ -47,6 +47,7 @@ The server is pre-configured with CORS for:
 - `https://pro.openbb.co`
 - `https://pro.openbb.dev`
 - `http://localhost:1420`
+- `http://localhost:8000`
 
 ## Dependencies
 
