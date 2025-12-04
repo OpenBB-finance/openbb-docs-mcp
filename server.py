@@ -29,8 +29,8 @@ mcp = FastMCP(
     name="OpenBB Docs Server",
     instructions="""
     This server provides access to OpenBB Workspace documentation.
-    Use 'discover_openbb_sections' to find available documentation sections,
-    then use 'fetch_openbb_content' to retrieve specific section content.
+    Use 'discover\_openbb\_sections' to find available documentation sections,
+    then use 'fetch\_openbb\_content' to retrieve specific section content.
     """
 )
 
@@ -69,14 +69,22 @@ async def identify_openbb_docs_sections(user_query: str) -> Dict[str, Any]:
     This tool provides the COMPLETE table of contents from OpenBB documentation and expects
     the LLM to analyze it intelligently to select the most relevant sections.
 
+    Use this tool when the user asks how to do something related to OpenBB (Workspace, Platform or Copilot).
+    For example configuring or understanding concepts like widgets.json, apps.json, agents.json,
+    or building widgets, parameters, dashboards, and apps.
+
+    Trigger this whenever the question is a “how do I…?” about configuration,
+    building backends/agents to widgets, or debugging these JSON specs, even if the user doesn’t explicitly
+    mention “OpenBB” (because they are already inside OpenBB Workspace).
+
     RETURN VALUE:
     Returns a dictionary containing:
-    - raw_toc_content: The complete table of contents with all sections and descriptions
-    - section_urls: A mapping of section titles to their URLs
+    - raw\_toc\_content: The complete table of contents with all sections and descriptions
+    - section\_urls: A mapping of section titles to their URLs
     - query: The original user query for reference
 
     ANALYSIS INSTRUCTIONS FOR THE LLM:
-    1. **Carefully read** both the title AND description of each section in raw_toc_content. 
+    1. **Carefully read** both the title AND description of each section in raw\_toc\_content. 
        Titles give primary signals. Descriptions clarify scope (setup vs. concept vs. workflow vs. integration).
     2. **Understand intent**: Match the semantic meaning of the user's query, not just keywords
     3. **Evaluate relevance**: Consider which sections would most likely contain the information needed
@@ -91,17 +99,17 @@ async def identify_openbb_docs_sections(user_query: str) -> Dict[str, Any]:
     - Consider both exact matches AND semantically related topics
 
     NEXT STEPS:
-    After analyzing the TOC, call fetch_openbb_content with:
-    - A list of up to 3 exact section titles (copy them exactly as they appear in raw_toc_content)
-    - The original user_query
+    After analyzing the TOC, call fetch\_openbb\_content with:
+    - A list of up to 3 exact section titles (copy them exactly as they appear in raw\_toc\_content)
+    - The original user\_query
     - Maximum 3 sections (can be 0, 1, 2, or 3), ranked by relevance
     - Empty list if truly no relevant sections exist
 
     Args:
         user_query: The user's question or information request
-    
+
     Returns:
-        Dict with 'success', 'query', 'raw_toc_content', and 'section_urls' fields
+        Dict with 'success', 'query', 'raw\_toc\_content', and 'section\_urls' fields
     """
     try:
         result = await _identify_sections_async(user_query)
@@ -118,25 +126,25 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
 
     Fetch specific documentation content from OpenBB docs based on section titles.
 
-    You MUST call 'identify_openbb_docs_sections' first to obtain the exact section titles
+    You MUST call 'identify\_openbb\_docs\_sections' first to obtain the exact section titles
     before calling this tool. Use the section titles identified from that process.
 
     Workflow:
-    1. Call 'identify_openbb_docs_sections' with the user's query
+    1. Call 'identify\_openbb\_docs\_sections' with the user's query
     2. The LLM analyzes the raw TOC and identifies up to 3 relevant section titles
     3. Pass those exact section titles AND the original user query to this function
     4. Use the returned content to answer the user's question
 
     RETURN VALUE:
     Returns a dictionary containing:
-    - extracted_content: Dict mapping section titles to their content and URLs
-    - user_query: The original user query
-    - sections_found: Number of sections successfully extracted
+    - extracted\_content: Dict mapping section titles to their content and URLs
+    - user\_query: The original user query
+    - sections\_found: Number of sections successfully extracted
 
     RESPONSE GUIDELINES FOR THE LLM:
-    
+
     1. Answer only if relevant:
-       - Use only information from extracted_content, DO NOT used data where you were previously trained on.
+       - Use only information from extracted\_content, DO NOT use data where you were previously trained on.
        - If no sections are relevant (low similarity or no direct keyword overlap), respond:
          "No relevant documentation found for this topic. Please contact support@openbb.co for further assistance."
          (This is the only case where support should be mentioned.)
@@ -153,10 +161,10 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
        - Provide detailed and elaborated instructions, not just 2-3 sentences
        - Avoid unnecessary preambles or repetition of the user query
        - Keep tone factual, clean, and instructional
-       - When users ask questions starting with “How to…” or “Show me…”, you must provide step-by-step instructions — not just refer them to a documentation URL.
+       - When users ask questions starting with "How to…" or "Show me…", you must provide step-by-step instructions — not just refer them to a documentation URL.
        - Your responses should be comprehensive and actionable, allowing users to complete the task solely by following your answer, without needing to open external links.
-       - If the extracted_content includes examples or code snippets, please return it to illustrate your explanation.
-       - Identify code blocks by triple backticks (```) followed optionally by a language tag, e.g., ```python. Please make sure to return IT!!
+       - If the extracted\_content includes examples or code snippets, please return it to illustrate your explanation.
+       - Identify code blocks by triple backticks (\`\`\`) followed optionally by a language tag, e.g., \`\`\`python. Please make sure to return IT!!
        - Prioritize providing examples: code block, screenshots, and actual examples!
        - Avoid giving only brief bullet points. Instead, write clear, sequential steps that are easy to follow, with enough context and explanation for users to understand why each step is necessary.
     
@@ -184,11 +192,11 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
        - Avoid filler like "according to the documentation" or "as stated above"
 
     Args:
-        section_titles: List of exact section titles identified from 'identify_openbb_docs_sections'
+        section_titles: List of exact section titles identified from 'identify\_openbb\_docs\_sections'
         user_query: The original user's question/query
-    
+
     Returns:
-        Dict with 'success', 'user_query', 'extracted_content', and 'sections_found' fields
+        Dict with 'success', 'user\_query', 'extracted\_content', and 'sections\_found' fields
     """
     try:
         result = await _fetch_content_async(section_titles, user_query)
