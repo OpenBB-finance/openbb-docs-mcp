@@ -11,7 +11,7 @@ import os
 import re
 import logging
 import traceback
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 import httpx
 import uvicorn
 from fastmcp import FastMCP
@@ -121,7 +121,7 @@ async def identify_openbb_docs_sections(user_query: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Dict[str, Any]:
+async def fetch_openbb_content(section_titles: Union[List[str], str], user_query: str) -> Dict[str, Any]:
     """
 
     Fetch specific documentation content from OpenBB docs based on section titles.
@@ -198,6 +198,8 @@ async def fetch_openbb_content(section_titles: List[str], user_query: str) -> Di
     Returns:
         Dict with 'success', 'user\_query', 'extracted\_content', and 'sections\_found' fields
     """
+    if isinstance(section_titles, str):
+        section_titles = [s.strip() for s in section_titles.split(",") if s.strip()]
     try:
         result = await _fetch_content_async(section_titles, user_query)
         return result
