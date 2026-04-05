@@ -425,6 +425,57 @@ def _find_section_content(full_docs: str, title: str) -> Optional[str]:
     return None
 
 
+@mcp.tool()
+def listed_apps_in_marketplace() -> str:
+    """Returns the list of all published apps available in the OpenBB Marketplace.
+    Each app includes: name, vendor, description, backend URL, thumbnail, documentation URL,
+    vendor website, contact email, API key URL, widgets, prompts, average rating, screenshots,
+    whether it's built-in, and authentication type. Use this to discover what data sources
+    and applications are available for users to integrate with OpenBB Workspace."""
+
+    try:
+        response = httpx.get("https://payments.openbb.dev/marketplace/apps")
+        response.raise_for_status()
+        apps = response.json()
+
+        result_lines = [f"# OpenBB Marketplace Apps ({len(apps)} apps available)\n"]
+
+        for app_item in apps:
+            result_lines.append(f"## {app_item.get('appName', 'N/A')}")
+            result_lines.append(f"- **Vendor:** {app_item.get('vendorName', 'N/A')}")
+            result_lines.append(f"- **Description:** {app_item.get('description', 'N/A')}")
+            result_lines.append(f"- **Backend URL:** {app_item.get('backendUrl', 'N/A')}")
+            result_lines.append(f"- **Built-in:** {app_item.get('isBuiltIn', False)}")
+            result_lines.append(f"- **Auth Type:** {app_item.get('authType', [])}")
+            result_lines.append(f"- **Average Rating:** {app_item.get('averageRating', 'N/A')}")
+
+            if app_item.get("documentationUrl"):
+                result_lines.append(f"- **Documentation:** {app_item['documentationUrl']}")
+            if app_item.get("vendorWebsiteUrl"):
+                result_lines.append(f"- **Vendor Website:** {app_item['vendorWebsiteUrl']}")
+            if app_item.get("contactEmail"):
+                result_lines.append(f"- **Contact:** {app_item['contactEmail']}")
+            if app_item.get("apiKeyUrl"):
+                result_lines.append(f"- **API Key Signup:** {app_item['apiKeyUrl']}")
+            if app_item.get("thumbnail"):
+                result_lines.append(f"- **Thumbnail:** {app_item['thumbnail']}")
+
+            widgets = app_item.get("widgets", [])
+            if widgets:
+                result_lines.append(f"- **Widgets ({len(widgets)}):** {', '.join(str(w) for w in widgets)}")
+
+            prompts = app_item.get("prompts", [])
+            if prompts:
+                result_lines.append(f"- **Prompts ({len(prompts)}):** {', '.join(str(p) for p in prompts)}")
+
+            result_lines.append("")
+
+        return "\n".join(result_lines)
+
+    except httpx.HTTPError as e:
+        return f"Error fetching marketplace apps: {str(e)}"
+
+
 if __name__ == "__main__":
     # Use PORT environment variable
     port = int(os.environ.get("PORT", 8000))
