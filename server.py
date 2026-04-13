@@ -427,16 +427,42 @@ def _find_section_content(full_docs: str, title: str) -> Optional[str]:
 
 @mcp.tool()
 def listed_apps_in_marketplace() -> str:
-    """Returns the list of all published apps available in the OpenBB Marketplace.
-    Each app includes: name, vendor, description, backend URL, thumbnail, documentation URL,
-    vendor website, contact email, API key URL, widgets, prompts, average rating, screenshots,
-    whether it's built-in, and authentication type. Use this to discover what data sources
-    and applications are available for users to integrate with OpenBB Workspace."""
+    """Search the OpenBB Marketplace for apps, datasets, and data vendors.
+
+    OpenBB Workspace does NOT ship its own datasets — data is provided by
+    third-party vendor apps published to the OpenBB Marketplace. Use this
+    tool whenever a user asks about data availability, coverage, vendors,
+    workflows, or apps for a specific asset class or domain.
+
+    Call this tool for questions like:
+      - "Do you have any data from the marketplace about crypto?"
+      - "What options data is available?"
+      - "Is there anything on institutional flow / futures / ETFs / macro?"
+      - "Which vendors offer fundamentals data?"
+      - "Any app for <topic>?"
+      - "What workflows / dashboards are available in OpenBB?"
+      - "Who provides <dataset>?"
+
+    Returns a markdown catalog of every published app with: app name,
+    vendor, description, the list of widgets (data views) the app exposes,
+    prompts, auth type, and documentation link. Search the widget names
+    and descriptions in the returned text to match the user's topic,
+    then recommend the relevant apps and vendors with their documentation
+    link.
+    """
 
     try:
-        response = httpx.get("https://payments.openbb.dev/marketplace/apps")
+        response = httpx.get(
+            "https://payments.openbb.dev/marketplace/apps", timeout=10.0
+        )
         response.raise_for_status()
         apps = response.json()
+
+        apps = [
+            a for a in apps
+            if not a.get("appName", "").startswith("E2E")
+            and not a.get("isDevelopment", False)
+        ]
 
         result_lines = [f"# OpenBB Marketplace Apps ({len(apps)} apps available)\n"]
 
@@ -444,29 +470,26 @@ def listed_apps_in_marketplace() -> str:
             result_lines.append(f"## {app_item.get('appName', 'N/A')}")
             result_lines.append(f"- **Vendor:** {app_item.get('vendorName', 'N/A')}")
             result_lines.append(f"- **Description:** {app_item.get('description', 'N/A')}")
-            result_lines.append(f"- **Backend URL:** {app_item.get('backendUrl', 'N/A')}")
-            result_lines.append(f"- **Built-in:** {app_item.get('isBuiltIn', False)}")
+
+            if app_item.get("vendorDescription"):
+                result_lines.append(f"- **About the vendor:** {app_item['vendorDescription']}")
+
             result_lines.append(f"- **Auth Type:** {app_item.get('authType', [])}")
-            result_lines.append(f"- **Average Rating:** {app_item.get('averageRating', 'N/A')}")
 
             if app_item.get("documentationUrl"):
                 result_lines.append(f"- **Documentation:** {app_item['documentationUrl']}")
-            if app_item.get("vendorWebsiteUrl"):
-                result_lines.append(f"- **Vendor Website:** {app_item['vendorWebsiteUrl']}")
-            if app_item.get("contactEmail"):
-                result_lines.append(f"- **Contact:** {app_item['contactEmail']}")
-            if app_item.get("apiKeyUrl"):
-                result_lines.append(f"- **API Key Signup:** {app_item['apiKeyUrl']}")
-            if app_item.get("thumbnail"):
-                result_lines.append(f"- **Thumbnail:** {app_item['thumbnail']}")
 
             widgets = app_item.get("widgets", [])
             if widgets:
-                result_lines.append(f"- **Widgets ({len(widgets)}):** {', '.join(str(w) for w in widgets)}")
+                result_lines.append(
+                    f"- **Widgets ({len(widgets)}):** {', '.join(str(w) for w in widgets)}"
+                )
 
             prompts = app_item.get("prompts", [])
             if prompts:
-                result_lines.append(f"- **Prompts ({len(prompts)}):** {', '.join(str(p) for p in prompts)}")
+                result_lines.append(
+                    f"- **Prompts ({len(prompts)}):** {', '.join(str(p) for p in prompts)}"
+                )
 
             result_lines.append("")
 
