@@ -453,7 +453,7 @@ def listed_apps_in_marketplace() -> str:
 
     try:
         response = httpx.get(
-            "https://payments.openbb.dev/marketplace/apps", timeout=10.0
+            "https://payments.openbb.co/marketplace/apps", timeout=10.0
         )
         response.raise_for_status()
         apps = response.json()
